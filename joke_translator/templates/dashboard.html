@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joke Translator Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>Joke Translator Dashboard</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Active Clients</h2>
+                <div class="stat" id="active-clients">0</div>
+                <div class="status active">Live</div>
+            </div>
+
+            <div class="card">
+                <h2>Total Clients Served</h2>
+                <div class="stat" id="total-clients">0</div>
+            </div>
+
+            <div class="card">
+                <h2>Total Jokes Sent</h2>
+                <div class="stat" id="total-jokes">0</div>
+            </div>
+
+            <div class="card">
+                <h2>Total Translations</h2>
+                <div class="stat" id="total-translations">0</div>
+            </div>
+
+            <div class="card">
+                <h2>Avg Time for Translation</h2>
+                <div class="stat" id="avg-time">0.00s</div>
+            </div>
+
+            <div class="card">
+                <h2>Session Duration</h2>
+                <div class="stat" id="session-duration">00:00:00</div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="translation-chart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Initialize WebSocket connection
+        const ws = new WebSocket(`ws://${window.location.host}/ws/dashboard`);
+        
+        // Initialize Chart.js
+        const ctx = document.getElementById('translation-chart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Translation Time (seconds)',
+                    data: [],
+                    backgroundColor: '#4a90e2',
+                    borderColor: '#2c3e50',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Time (seconds)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Translation Number'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Format duration in HH:MM:SS
+        function formatDuration(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // Update dashboard with new statistics
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'stats_update') {
+                const stats = data.global_stats;
+                
+                // Update statistics
+                document.getElementById('active-clients').textContent = stats.active_clients;
+                document.getElementById('total-clients').textContent = stats.total_clients_served;
+                document.getElementById('total-jokes').textContent = stats.total_jokes_sent;
+                document.getElementById('total-translations').textContent = stats.total_translations;
+                document.getElementById('avg-time').textContent = `${stats.avg_translation_time.toFixed(2)}s`;
+                document.getElementById('session-duration').textContent = formatDuration(stats.session_duration);
+                
+                // Update chart
+                const recentTranslations = stats.recent_translations;
+                chart.data.labels = Array.from({ length: recentTranslations.times.length }, (_, i) => i + 1);
+                chart.data.datasets[0].data = recentTranslations.times;
+                chart.update();
+            }
+        };
+
+        // Handle WebSocket errors
+        ws.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+
+        // Handle WebSocket closure
+        ws.onclose = function() {
+            document.querySelector('.status').classList.remove('active');
+            document.querySelector('.status').classList.add('inactive');
+            document.querySelector('.status').textContent = 'Disconnected';
+        };
+    </script>
+</body>
+</html> 
