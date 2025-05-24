@@ -22,7 +22,7 @@ A WebSocket-based application that generates jokes and translates them into diff
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/clintongnanaraj/joke_translator.git
+git clone https://github.com/clintonai-tech/joke_translator.git
 cd joke_translator
 ```
 
@@ -114,7 +114,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-Clinton Gnanaraj - [@clintongnanaraj](https://github.com/clintongnanaraj)
+Clinton Gnanaraj - [@clintongnanaraj](https://github.com/clintonai-tech)
 
 ## Acknowledgments
 
